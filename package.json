@@ -1,0 +1,28 @@
+{
+  "name": "telecross",
+  "version": "1.0.0",
+  "description": "An automatic reservation bot for the gym",
+  "main": "app.js",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.50.0",
+    "pg": "^8.3.0",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "/test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bolito2/telecross.git"
+  },
+  "keywords": [
+    "crossfit"
+  ],
+  "author": "bolito2",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bolito2/telecross/issues"
+  },
+  "homepage": "https://github.com/Bolito2/telecross#readme"
+}
