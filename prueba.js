@@ -1,14 +1,18 @@
 const request = require('request');
+const util = require('util');
 
-const sid_options = {
-    uri: 'https://trainingymapp.com/webtouch/',
+const options = {
+    uri: util.format('https://trainingymapp.com/webtouch/api/usuarios/reservas/getSchedulesApp/?startDateTime=%s&endDateTime=%s', '2020-08-03', '2020-08-03'),
     method: 'GET',
+    headers: {
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cookie': util.format('connect.sid=%s', 's%3AhjsiqlL6MhCdByE9ePTVd_WW8c2bRn5a.GNaJbdAthJbms0rbF2Z9nRZh8FVDpxQYCgD7vt7P%2F8M')
+    },
     proxy: 'http://127.0.0.1:8888',
     "rejectUnauthorized": false
 };
 
-request(login_options("oscar_alvarez62@hotmail.es", "anapatricia69"), (err, res, body) => {
+request(options, (err, res, body) => {
   if (err) throw err;
-  const cookies = res.headers['set-cookie'][0];
-  const sid = cookies.split('=')[1].split(';')[0];
+  console.log(body);
 });
