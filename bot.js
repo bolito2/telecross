@@ -1,74 +1,14 @@
-//Postgres
-const { Client } = require('pg');
+const net = require('./net.js');
 var util = require('util');
 
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
-client.connect();
+var nombres_dias_semana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-//Requests
-const request = require('request');
-
-const sid_options = {
-    uri: 'https://trainingymapp.com/webtouch/',
-    method: 'GET'
-};
-
-function login_options(email, pass, sid){
-  return {
-      uri: 'https://trainingymapp.com/webtouch/api/indexs/login',
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json;charset=utf-8',
-          'Cookie': util.format('connect.sid=%s', sid)
-      },
-      json: true,
-      body:{
-        "user": email,
-        "pass": pass,
-        "tokenKiosko":""
-      }
-  };
-}
-function calendario_options(date, sid){
-  return {
-      uri: util.format('https://trainingymapp.com/webtouch/api/usuarios/reservas/getSchedulesApp/?startDateTime=%s&endDateTime=%s', date, date),
-      method: 'GET',
-      json: true,
-      headers: {
-          'Cookie': util.format('connect.sid=%s', sid)
-      }
-  };
-}
-
-function login(userID, cb){
-  request(sid_options, (err, res, body) => {
-    if (err) throw err;
-    const cookies = res.headers['set-cookie'][0];
-    const sid = cookies.split('=')[1].split(';')[0];
-
-    request(login_options(users[userID].email, users[userID].pass, sid), (err, res, body) => {
-      if (err) throw err;
-
-      let json = JSON.parse(body.d);
-      if(json.Centros.length == 0 || json.Centros.length == '0'){
-        cb(true, sid);
-      }else{
-        cb(false, sid);
-      }
-    });
-  });
-}
 //Cosos telegram
 const TelegramBot = require('node-telegram-bot-api');
 const telegram_token = process.env.telegram_token;
 const bot = new TelegramBot(telegram_token, {polling:true});
 
-const AWAITING_INPUT = 0, LOADING = 1, LOGIN = 2, REGISTER = 3, PASS = 4, FIRST_CONTACT = 5, CHOOSING_DAY = 6, CHOOSING_ACTIVITY = 7, CHOOSING_NOTIFICATIONS = 8;
+const AWAITING_INPUT = 0, LOADING = 1, LOGIN = 2, REGISTER = 3, PASS = 4, FIRST_CONTACT = 5, CHOOSING_DAY = 6, CHOOSING_ACTIVITY = 7, CHOOSING_NOTIFICATIONS = 8, CHOOSING_DELETE = 9;
 
 var users = [];
 
@@ -83,7 +23,7 @@ var dias_semana = {
 var menu_principal = {
     reply_markup: {
         inline_keyboard: [
-            [{text: 'Nueva reserva', callback_data: 'nueva_reserva'}, {text: 'Nada', callback_data: 'nada'}]
+            [{text: 'Nueva reserva', callback_data: 'nueva_reserva'}, {text: 'Modificar reservas', callback_data: 'modificar_reservas'}, {text: 'Nada', callback_data: 'nada'}]
         ]
     }
 };
@@ -116,7 +56,7 @@ bot.on('message', (msg) => {
   switch(users[userID].state){
     case FIRST_CONTACT:
       users[userID].state = LOADING;
-      client.query(util.format('SELECT * FROM users WHERE telegram_id=%d', userID), (err, res) => {
+      net.client.query(util.format('SELECT * FROM users WHERE telegram_id=%d', userID), (err, res) => {
         if (err) throw err;
         if(res.rows.length > 0){
           bot.sendMessage(chatID, "Bienvenido de vuelta");
@@ -126,7 +66,7 @@ bot.on('message', (msg) => {
 
           users[userID].state = LOADING;
 
-          login(userID, (err, sid) => {
+          net.login(users[userID], (err, sid) => {
             if(err){
               bot.sendMessage(chatID, "Ha ocurrido un error contactando con el servidor");
               users[userID].state = FIRST_CONTACT;
@@ -142,6 +82,7 @@ bot.on('message', (msg) => {
           users[userID].state = REGISTER;
         }
       });
+
       break;
     case REGISTER:
       users[userID].email = msg.text;
@@ -152,14 +93,14 @@ bot.on('message', (msg) => {
       users[userID].pass = msg.text;
 
       users[userID].state = LOADING;
-      login(userID, (err, sid) =>{
+      net.login(users[userID], (err, sid) =>{
         if(err){
           bot.sendMessage(chatID, "Los datos que has introducido son incorrectos, vuelve a intentarlo(pon el correo)");
           users[userID].state = REGISTER;
         }else{
           users[userID].sid = sid;
 
-          client.query(util.format('INSERT INTO users(telegram_id, email, pass, reservas) VALUES (%d,\'%s\',\'%s\',\'[]\')', userID, users[userID].email, users[userID].pass), (err, res) => {
+          net.client.query(util.format('INSERT INTO users(telegram_id, email, pass, reservas) VALUES (%d,\'%s\',\'%s\',\'[]\')', userID, users[userID].email, users[userID].pass), (err, res) => {
             if (err) throw err;
 
             bot.sendMessage(chatID, "Te has registrado correctamente");
@@ -188,7 +129,7 @@ bot.on("callback_query", (cb_data) => {
       date.setDate(date.getDate() + dif);
 
       users[userID].state = LOADING;
-      request(calendario_options(dateformat(date, 'yyyy-mm-dd'), users[userID].sid), (err, res, body) => {
+      net.request(net.calendario_options(dateformat(date, 'yyyy-mm-dd'), users[userID].sid), (err, res, body) => {
         if(err) throw err;
 
         if(body.calendar.length == 0){
@@ -225,12 +166,69 @@ bot.on("callback_query", (cb_data) => {
         bot.sendMessage(chatID, "Selecciona un día de la semana", dias_semana);
         users[userID].state = CHOOSING_DAY;
       break;
+      case 'modificar_reservas':
+        users[userID].state = LOADING;
+        net.client.query(util.format('SELECT reservas FROM users WHERE telegram_id=%s', userID), (err, res) => {
+          if(err) throw err;
+          if(res.rows.length == 0){
+            bot.answerCallbackQuery(cb_data.id, 'Error, no estás en la base de datos');
+            users[userID].state = FIRST_CONTACT;
+          }else{
+            let reservas = JSON.parse(res.rows[0].reservas);
+
+            if(reservas.length == 0){
+              bot.answerCallbackQuery(cb_data.id);
+              bot.sendMessage(chatID, "No has programado ninguna reserva");
+              bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
+              users[userID].state = AWAITING_INPUT;
+            }else{
+              let menu_reservas = {
+                  reply_markup: {
+                      inline_keyboard: []
+                  }
+              };
+
+              for(let i = 0; i < reservas.length; i++){
+                menu_reservas.reply_markup.inline_keyboard.push([{text: util.format('%s | %s %s', nombres_dias_semana[Number(reservas[i].day)], reservas[i].name, reservas[i].time), callback_data: i}]);
+              }
+              menu_reservas.reply_markup.inline_keyboard.push([{text: 'Cancelar', callback_data: 'cancelar'}]);
+              users[userID].schedule = reservas;
+
+              bot.answerCallbackQuery(cb_data.id);
+              bot.sendMessage(chatID, '¿Qué reserva quieres eliminar?', menu_reservas);
+
+              users[userID].state = CHOOSING_DELETE;
+            }
+          }
+        });
+      break;
       case 'nada':
         bot.answerCallbackQuery(cb_data.id);
         bot.sendMessage(chatID, "Adeu");
         users[userID].state = FIRST_CONTACT;
       break;
     }
+    break;
+    case CHOOSING_DELETE:
+      if(cb_data.data == 'cancelar'){
+        bot.answerCallbackQuery(cb_data.id);
+        bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
+        users[userID].state = AWAITING_INPUT;
+      }else{
+        let reservas = users[userID].schedule;
+        users[userID].schedule = null;
+
+        reservas.splice(cb_data.data, 1);
+
+        net.client.query(util.format('UPDATE users SET reservas=\'%s\' WHERE telegram_id=%s', JSON.stringify(reservas), userID), (err, res) => {
+          if(err) throw err;
+
+          bot.answerCallbackQuery(cb_data.id);
+          bot.sendMessage(chatID, "Se ha eliminado la reserva correctamente");
+          bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
+          users[userID].state = AWAITING_INPUT;
+        });
+      }
     break;
     case CHOOSING_ACTIVITY:
       users[userID].current_reservation = cb_data.data;
@@ -241,7 +239,7 @@ bot.on("callback_query", (cb_data) => {
 
     case CHOOSING_NOTIFICATIONS:
     users[userID].state = LOADING;
-    client.query(util.format('SELECT reservas FROM users WHERE telegram_id=%s', userID), (err, res) => {
+    net.client.query(util.format('SELECT reservas FROM users WHERE telegram_id=%s', userID), (err, res) => {
       if(err) throw err;
 
       if(res.rows.length == 0){
@@ -263,7 +261,7 @@ bot.on("callback_query", (cb_data) => {
         reservas.push(reserva);
 
         users[userID].state = LOADING;
-        client.query(util.format('UPDATE users SET reservas=\'%s\' WHERE telegram_id=%s', JSON.stringify(reservas), userID), (err, res) => {
+        net.client.query(util.format('UPDATE users SET reservas=\'%s\' WHERE telegram_id=%s', JSON.stringify(reservas), userID), (err, res) => {
           if(err) throw err;
 
           users[userID].schedule = null;
