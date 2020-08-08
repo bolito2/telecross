@@ -260,30 +260,49 @@ bot.on("callback_query", (cb_data) => {
       }else{
         let reservas = JSON.parse(res.rows[0].reservas);
 
-        let reserva = {
-          activity_id: users[userID].schedule[users[userID].current_reservation].activity.id,
-          name: users[userID].schedule[users[userID].current_reservation].activity.name,
-          day: users[userID].current_day,
-          time: users[userID].schedule[users[userID].current_reservation].timeStart,
-          notification: 0
+        let repetido = false;
+        for(let i = 0; i < reservas.length; i++){
+          if(reservas[i].day == users[userID].current_day){
+            repetido = true;
+            break;
+          }
         }
-        if(cb_data.data == "error") reserva.notification = 1;
-        if(cb_data.data == "nunca") reserva.notification = 2;
 
-        reservas.push(reserva);
-
-        users[userID].state = LOADING;
-        net.client.query(util.format('UPDATE users SET reservas=\'%s\' WHERE telegram_id=%s', JSON.stringify(reservas), userID), (err, res) => {
-          if(err) throw err;
-
+        if(repetido){
           users[userID].schedule = null;
           users[userID].current_reservation = null;
           users[userID].current_day = null;
 
           bot.answerCallbackQuery(cb_data.id);
+          bot.sendMessage(chatID, "Ya tienes una reserva ese día. Elimínala antes de hacer otra.");
           bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
           users[userID].state = AWAITING_INPUT;
-        });
+        }else{
+          let reserva = {
+            activity_id: users[userID].schedule[users[userID].current_reservation].activity.id,
+            name: users[userID].schedule[users[userID].current_reservation].activity.name,
+            day: users[userID].current_day,
+            time: users[userID].schedule[users[userID].current_reservation].timeStart,
+            notification: 0
+          }
+          if(cb_data.data == "error") reserva.notification = 1;
+          if(cb_data.data == "nunca") reserva.notification = 2;
+
+          reservas.push(reserva);
+
+          users[userID].state = LOADING;
+          net.client.query(util.format('UPDATE users SET reservas=\'%s\' WHERE telegram_id=%s', JSON.stringify(reservas), userID), (err, res) => {
+            if(err) throw err;
+
+            users[userID].schedule = null;
+            users[userID].current_reservation = null;
+            users[userID].current_day = null;
+
+            bot.answerCallbackQuery(cb_data.id);
+            bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
+            users[userID].state = AWAITING_INPUT;
+          });
+        }
       }
     });
     break;
