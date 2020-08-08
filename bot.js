@@ -132,8 +132,10 @@ bot.on("callback_query", (cb_data) => {
       net.request(net.calendario_options(dateformat(date, 'yyyy-mm-dd'), users[userID].sid), (err, res, body) => {
         if(err) throw err;
 
-        if(body.calendar.length == 0){
-          bot.answerCallbackQuery(cb_data.id, "No hay reservas este día");
+        if(body.calendar[0].schedules.length == 0){
+          bot.answerCallbackQuery(cb_data.id);
+          bot.sendMessage(chatID, "No hay ninguna sesión este día");
+          bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
           users[userID].state = AWAITING_INPUT;
         }else{
           bot.answerCallbackQuery(cb_data.id);
@@ -153,7 +155,7 @@ bot.on("callback_query", (cb_data) => {
             }
             actividades.reply_markup.inline_keyboard[Math.floor(i/2)].push({text: util.format('%s %s', users[userID].schedule[i].activity.name, users[userID].schedule[i].timeStart), callback_data: i});
           }
-
+          actividades.reply_markup.inline_keyboard.push([{text: 'Cancelar', callback_data: 'cancelar'}]);
           bot.sendMessage(chatID, "Selecciona una sesión", actividades);
         }
 
@@ -231,10 +233,20 @@ bot.on("callback_query", (cb_data) => {
       }
     break;
     case CHOOSING_ACTIVITY:
-      users[userID].current_reservation = cb_data.data;
-      bot.answerCallbackQuery(cb_data.id);
-      bot.sendMessage(chatID, '¿Quieres que te notifique al reservar?', notificaciones)
-      users[userID].state = CHOOSING_NOTIFICATIONS;
+      if(cb_data.data == 'cancelar'){
+        users[userID].schedule = null;
+        users[userID].current_reservation = null;
+        users[userID].current_day = null;
+
+        bot.answerCallbackQuery(cb_data.id);
+        bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
+        users[userID].state = AWAITING_INPUT;
+      }else{
+        users[userID].current_reservation = cb_data.data;
+        bot.answerCallbackQuery(cb_data.id);
+        bot.sendMessage(chatID, '¿Quieres que te notifique al reservar?', notificaciones)
+        users[userID].state = CHOOSING_NOTIFICATIONS;
+      }
     break;
 
     case CHOOSING_NOTIFICATIONS:
