@@ -46,7 +46,7 @@ bot.on('message', (msg) => {
       state: FIRST_CONTACT,
       email: "",
       pass: "",
-      sid: "",
+      credentials: null,
       current_reservation: null,
       current_day: null,
       schedule: null
@@ -66,12 +66,12 @@ bot.on('message', (msg) => {
 
           users[userID].state = LOADING;
 
-          net.login(users[userID], (err, sid) => {
+          net.login(users[userID], (err, credentials) => {
             if(err){
               bot.sendMessage(chatID, "Ha ocurrido un error contactando con el servidor");
               users[userID].state = FIRST_CONTACT;
             }else{
-              users[userID].sid = sid;
+              users[userID].credentials = credentials;
 
               bot.sendMessage(chatID, "Qué quieres hacer?", menu_principal);
               users[userID].state = AWAITING_INPUT;
@@ -93,14 +93,14 @@ bot.on('message', (msg) => {
       users[userID].pass = msg.text;
 
       users[userID].state = LOADING;
-      net.login(users[userID], (err, sid) =>{
+      net.login(users[userID], (err, credentials) =>{
         if(err){
           bot.sendMessage(chatID, "Los datos que has introducido son incorrectos, vuelve a intentarlo(pon el correo)");
           users[userID].state = REGISTER;
         }else{
-          users[userID].sid = sid;
+          users[userID].credentials = credentials;
 
-          net.client.query(util.format('INSERT INTO users(telegram_id, email, pass, reservas) VALUES (%d,\'%s\',\'%s\',\'[]\')', userID, users[userID].email, users[userID].pass), (err, res) => {
+          net.client.query(util.format('INSERT INTO users(telegram_id, email, pass, reservas, chatID) VALUES (%d,\'%s\',\'%s\',\'[]\',%d)', userID, users[userID].email, users[userID].pass, chatID), (err, res) => {
             if (err) throw err;
 
             bot.sendMessage(chatID, "Te has registrado correctamente");
@@ -129,7 +129,7 @@ bot.on("callback_query", (cb_data) => {
       date.setDate(date.getDate() + dif);
 
       users[userID].state = LOADING;
-      net.request(net.calendario_options(dateformat(date, 'yyyy-mm-dd'), users[userID].sid), (err, res, body) => {
+      net.request(net.calendario_options(dateformat(date, 'yyyy-mm-dd'), users[userID].credentials.sid), (err, res, body) => {
         if(err) throw err;
 
         if(body.calendar[0].schedules.length == 0){
