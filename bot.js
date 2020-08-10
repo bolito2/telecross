@@ -330,5 +330,6 @@ app.post('/sendMessage', (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(process.env.PORT | 5000);
-console.log(util.format('Listening to messages at port %d', process.env.PORT | 5000));
+app.listen(process.env.PORT || 5000, function() {
+  console.log(util.format("Server started on port %d", process.env.PORT || 5000));
+});
