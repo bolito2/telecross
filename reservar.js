@@ -76,15 +76,19 @@ net.client.query('SELECT * FROM users', (err, res) => {
                       break;
                       case 3:
                         console.log('Sesión ya reservada');
+                        net.client.end();
                       break;
                       case 6:
                         if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('Wtf la sesión de %s del %s a las %s ha finalizado', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                        net.client.end();
                       break;
                       case 5:
                         if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s no está disponible', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                        net.client.end();
                       break;
                       default:
                         if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
+                        net.client.end();
                       break;
                     }
 
