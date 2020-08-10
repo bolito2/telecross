@@ -50,8 +50,6 @@ net.client.query('SELECT * FROM users', (err, res) => {
 
               date.setSeconds(1);
 
-              console.log('Reserva date: ', dateformat(reservaDate, 'dd/mm HH:MM'));
-
               if(Number(reservas[j].day) == date.getDay() && date > reservaDate){
                 console.log('Reserva a realizar: ', reservas[j]);
 

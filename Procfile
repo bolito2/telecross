@@ -1,2 +1,2 @@
-bot: node bot.js
+web: node bot.js
 reservar: node reservar.js
