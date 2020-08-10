@@ -2,12 +2,14 @@ const net = require('./net.js');
 const util = require('util');
 const dateformat = require('dateformat');
 
-const TelegramBot = require('node-telegram-bot-api');
-const telegram_token = process.env.telegram_token;
-const bot = new TelegramBot(telegram_token, {polling:true});
-
 let date = new Date();
 date.setDate(date.getDate() + 1);
+
+function sendMessage(chatID, msg){
+  net.request(net.message_options(chatID, msg), (err, res, body) => {
+    if(err) throw err;
+  });
+}
 
 net.client.query('SELECT * FROM users', (err, res) => {
   if(err) throw err;
@@ -67,8 +69,10 @@ net.client.query('SELECT * FROM users', (err, res) => {
                             if(err) throw err;
                             let new_schedules = body.calendar[0].schedules;
 
-                            if(reservas[j].notification == 0 && new_schedules[k].bookingState == 3) bot.sendMessage(user.chatID, util.format('Se ha reservado la sesión de %s del %s a las %s correctamente', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
-                            if(reservas[j].notification <= 1 && new_schedules[k].bookingState != 3)bot.sendMessage(user.chatID, util.format('Ha ocurrido un error reservando la sesión de %s del %s a las %s. Ahora mismo está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
+                            if(reservas[j].notification == 0 && new_schedules[k].bookingState == 3) sendMessage(user.chatID, util.format('Se ha reservado la sesión de %s del %s a las %s correctamente', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                            if(reservas[j].notification <= 1 && new_schedules[k].bookingState != 3)sendMessage(user.chatID, util.format('Ha ocurrido un error reservando la sesión de %s del %s a las %s. Ahora mismo está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
+
+                            net.client.end();
                           });
                         });
                       break;
@@ -76,13 +80,13 @@ net.client.query('SELECT * FROM users', (err, res) => {
                         console.log('Sesión ya reservada');
                       break;
                       case 6:
-                        if(reservas[j].notification <= 1) bot.sendMessage(user.chatID, util.format('Wtf la sesión de %s del %s a las %s ha finalizado', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                        if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('Wtf la sesión de %s del %s a las %s ha finalizado', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
                       break;
                       case 5:
-                        if(reservas[j].notification <= 1) bot.sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s no está disponible', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                        if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s no está disponible', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
                       break;
                       default:
-                        if(reservas[j].notification <= 1) bot.sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
+                        if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
                       break;
                     }
 
@@ -91,7 +95,7 @@ net.client.query('SELECT * FROM users', (err, res) => {
                 }
 
                 if(!encontrada){
-                  if(reservas[j].notification <= 1) bot.sendMessage(user.chatID, util.format('No se ha encontrado la sesión de %s del %s a las %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                  if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('No se ha encontrado la sesión de %s del %s a las %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
                 }
               }
             }

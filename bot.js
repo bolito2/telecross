@@ -316,3 +316,19 @@ bot.on("callback_query", (cb_data) => {
     break;
   }
 });
+
+//Callback reservas
+const express = require('express');
+const bodyParser = require("body-parser");
+var app = express();
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+
+app.post('/sendMessage', (req, res) => {
+  bot.sendMessage(req.body.chatID, req.body.msg);
+  res.sendStatus(200);
+});
+
+app.listen(process.env.PORT | 5000);
+console.log(util.format('Listening to messages at port %d', process.env.PORT | 5000));

@@ -36,6 +36,23 @@ function login_options(email, pass, sid){
       }
   };
 }
+
+function message_options(chatID, msg){
+  return {
+      uri: 'http://telecross.herokuapp.com/sendMessage',
+      //uri: 'http://localhost:5000/sendMessage',
+      method: 'POST',
+      headers:{
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      json: true,
+      body:{
+        "chatID": chatID,
+        "msg": msg
+      }
+  };
+}
+
 function calendario_options(date, sid){
   return {
       uri: util.format('https://trainingymapp.com/webtouch/api/usuarios/reservas/getSchedulesApp/?startDateTime=%s&endDateTime=%s', date, date),
@@ -102,5 +119,5 @@ function login(user, cb){
 }
 
 module.exports = {
-  client, request, sid_options, login_options, calendario_options, login, negotiate_options, reservar_options
+  client, request, sid_options, login_options, calendario_options, login, negotiate_options, reservar_options, message_options
 }
