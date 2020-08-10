@@ -68,7 +68,7 @@ net.client.query('SELECT * FROM users', (err, res) => {
                             let new_schedules = body.calendar[0].schedules;
 
                             if(reservas[j].notification == 0 && new_schedules[k].bookingState == 3) sendMessage(user.chatID, util.format('Se ha reservado la sesión de %s del %s a las %s correctamente', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
-                            if(reservas[j].notification <= 1 && new_schedules[k].bookingState != 3)sendMessage(user.chatID, util.format('Ha ocurrido un error reservando la sesión de %s del %s a las %s. Ahora mismo está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
+                            if(reservas[j].notification <= 1 && new_schedules[k].bookingState != 3)sendMessage(user.chatID, util.format('Ha ocurrido un error reservando la sesión de %s del %s a las %s. Ahora mismo está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, new_schedules[k].bookingStateText));
 
                             net.client.end();
                           });
