@@ -149,11 +149,19 @@ bot.on("callback_query", (cb_data) => {
               }
           };
 
+          let schedule = [];
+
           for(let i = 0; i < users[userID].schedule.length; i++){
+            if(users[userID].schedule[i].bookingState != 0){
+              schedule.push(users[userID].schedule[i]);
+            }
+          }
+
+          for(let i = 0; i < schedule.length; i++){
             if(i % 2 == 0){
               actividades.reply_markup.inline_keyboard.push([]);
             }
-            actividades.reply_markup.inline_keyboard[Math.floor(i/2)].push({text: util.format('%s %s', users[userID].schedule[i].activity.name, users[userID].schedule[i].timeStart), callback_data: i});
+            actividades.reply_markup.inline_keyboard[Math.floor(i/2)].push({text: util.format('%s %s', schedule[i].activity.name, schedule[i].timeStart), callback_data: i});
           }
           actividades.reply_markup.inline_keyboard.push([{text: 'Cancelar', callback_data: 'cancelar'}]);
           bot.sendMessage(chatID, "Selecciona una sesión", actividades);
