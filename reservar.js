@@ -38,7 +38,19 @@ net.client.query('SELECT * FROM users', (err, res) => {
             console.log('No hay reservas para mañana');
           }else{
             for(let j = 0; j < reservas.length; j++){
-              if(Number(reservas[j].day) == date.getDay()){
+              let reservaDate = new Date();
+              let horaReserva = reservas[j].time;
+
+              reservaDate.setDate(reservaDate.getDate() + 1);
+              reservaDate.setHours(Number(horaReserva.split(':')[0]));
+              reservaDate.setMinutes(Number(horaReserva.split(':')[1]));
+              reservaDate.setSeconds(0);
+
+              date.setSeconds(1);
+
+              console.log('Reserva date: ', dateformat(reservaDate, 'dd HH:MM'));
+
+              if(Number(reservas[j].day) == date.getDay() && date > reservaDate){
                 console.log('Reserva a realizar: ', reservas[j]);
 
                 for(let k = 0; k < schedules.length; k++){
