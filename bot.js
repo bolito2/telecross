@@ -157,6 +157,8 @@ bot.on("callback_query", (cb_data) => {
             }
           }
 
+          users[userID].schedule = schedule;
+
           for(let i = 0; i < schedule.length; i++){
             if(i % 2 == 0){
               actividades.reply_markup.inline_keyboard.push([]);
