@@ -57,14 +57,15 @@ net.client.query('SELECT * FROM users', (err, res) => {
               date.setSeconds(1);
 
               if(Number(reservas[j].day) == date.getDay() && date > reservaDate){
-                algunaReserva = True
-                console.log('Reserva a realizar: ', reservas[j]);
+                algunaReserva = true
+                console.log('\n----------------------------\n', 'Reserva a realizar: \n', reservas[j], '\n----------------------------\n');
 
                 let encontrada = false;
 
                 for(let k = 0; k < schedules.length; k++){
                   if(reservas[j].activity_id == schedules[k].activity.id && reservas[j].time == schedules[k].timeStart){
                     encontrada = true;
+                    console.log('\n----------------------------\n', 'Reserva encontrada: \n', schedules[k],'\n----------------------------\n')
                     switch(schedules[k].bookingState){
                       case 1:
                         net.request(net.reservar_options(credentials, schedules[k].id), (err, res, body) => {
@@ -94,7 +95,7 @@ net.client.query('SELECT * FROM users', (err, res) => {
                         net.client.end();
                       break;
                       default:
-                        if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, reservas[j].bookingStateText));
+                        if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('La sesión de %s del %s a las %s está en el estado %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time, schedules[k].bookingStateText));
                         net.client.end();
                       break;
                     }
