@@ -22,14 +22,17 @@ net.client.query('SELECT * FROM users', (err, res) => {
       credentials: null
     };
 
+    console.log(util.format('Logging in %s', user.email))
+
     let reservas = JSON.parse(res.rows[i].reservas);
 
     net.login({email: user.email, pass: user.pass}, (err, credentials) => {
       net.request(net.negotiate_options(credentials), (err, res, body) => {
         if(err) throw err;
         credentials.connectionId = body.connectionId;
-        console.log('Credentials: ', credentials);
         user.credentials = credentials;
+
+        console.log('Succesfully logged in: \n', user);
 
         net.request(net.calendario_options(dateformat(date, 'yyyy-mm-dd'), user.credentials.sid), (err, res, body) => {
           if(err) throw err;
@@ -38,7 +41,10 @@ net.client.query('SELECT * FROM users', (err, res) => {
 
           if(schedules.length == 0){
             console.log('No hay reservas para mañana');
+            net.client.end();
           }else{
+            let algunaReserva = false;
+
             for(let j = 0; j < reservas.length; j++){
               let reservaDate = new Date();
               let horaReserva = reservas[j].time;
@@ -51,6 +57,7 @@ net.client.query('SELECT * FROM users', (err, res) => {
               date.setSeconds(1);
 
               if(Number(reservas[j].day) == date.getDay() && date > reservaDate){
+                algunaReserva = True
                 console.log('Reserva a realizar: ', reservas[j]);
 
                 let encontrada = false;
@@ -98,8 +105,14 @@ net.client.query('SELECT * FROM users', (err, res) => {
 
                 if(!encontrada){
                   if(reservas[j].notification <= 1) sendMessage(user.chatID, util.format('No se ha encontrado la sesión de %s del %s a las %s', reservas[j].name, dateformat(date, 'dddd'),reservas[j].time));
+                  net.client.end();
                 }
+                break;
               }
+            }
+            if(!algunaReserva){
+              console.log('Ninguna reserva para realizar');
+              net.client.end();
             }
           }
         });
