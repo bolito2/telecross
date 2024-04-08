@@ -8,7 +8,6 @@
     <em>Empower your fitness journey with seamless collaboration</em>
 </p>
 <p align="center">
-	<img src="https://img.shields.io/github/license/bolito2/telecross?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
 	<img src="https://img.shields.io/github/last-commit/bolito2/telecross?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
 	<img src="https://img.shields.io/github/languages/top/bolito2/telecross?style=default&color=0080ff" alt="repo-top-language">
 	<img src="https://img.shields.io/github/languages/count/bolito2/telecross?style=default&color=0080ff" alt="repo-language-count">
